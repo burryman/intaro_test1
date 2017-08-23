@@ -1,5 +1,6 @@
 <?php
-class Requests extends CI_Controller {
+class Requests extends CI_Controller
+{
 
         public function __construct()
         {
@@ -9,7 +10,7 @@ class Requests extends CI_Controller {
 
         public function index()
 		{
-		        $data['request'] = $this->requests_model->get_requests();
+		        $data['request'] = $this->requests_model->get();
 		        $data['title'] = 'Заявки на ремонт';
 
 		        $this->load->view('templates/header', $data);
@@ -17,12 +18,11 @@ class Requests extends CI_Controller {
 		        $this->load->view('templates/footer');
 		}
 
-        public function view($slug = NULL)
+        public function view($slug = null)
 		{
-		        $data['requests_item'] = $this->requests_model->get_requests($slug);
+		        $data['requests_item'] = $this->requests_model->getBySlug($slug);
 
-		        if (empty($data['requests_item']))
-		        {
+		        if (empty($data['requests_item'])){
 		                show_404();
 		        }
 
@@ -32,6 +32,8 @@ class Requests extends CI_Controller {
 		        $this->load->view('requests/view', $data);
 		        $this->load->view('templates/footer');
 		}
+
+		
 
 		public function create()
 		{
@@ -44,42 +46,41 @@ class Requests extends CI_Controller {
 		    $this->form_validation->set_rules('description', 'Description', 'required');
 		    $this->form_validation->set_rules('phone', 'Phone', 'required');
 
-		    if ($this->form_validation->run() === FALSE)
+		    if ($this->form_validation->run() === false)
 		    {
 		        $this->load->view('templates/header', $data);
 		        $this->load->view('requests/create');
 		        $this->load->view('templates/footer');
 
-		    }
-		    else
-		    {
-		        $this->requests_model->set_requests();
+		    }else{
+		    	$img_url = $this->get_img_url();
+		        $this->requests_model->set_requests($img_url);
 		        $this->load->view('requests/success');
 		    }
 		}
 
+
 		public function get_img_url()
 		{
-		  $url = "../images";
-		  $image=basename($_FILES['pic']['name']);
-		  $image=str_replace(' ','|',$image);
-		  $type = explode(".",$image);
+		  $info = getimagesize($_FILES['pic']['tmp_name']);
+		  $mime = $info['mime'];
+		  $img_name = basename($_FILES['pic']['name']);
+		  $img_name = str_replace(' ','|',$img_name);
+		  $type = explode(".",$img_name);
 		  $type = $type[count($type)-1];
-		  if (in_array($type,array('jpg','jpeg','png','gif')))
+		  if ($mime == "image/png")
 		  {
-		    $tmppath="images/".uniqid(rand()).".".$type; 
+		  	$uniq_name = uniqid(rand()).".".$type;
+		    $tmppath = "/home/burrman/public_html/site.local/uploads/".$uniq_name; 
 		    if(is_uploaded_file($_FILES["pic"]["tmp_name"]))
 		    {
 		      move_uploaded_file($_FILES['pic']['tmp_name'],$tmppath);
+		      $tmppath = "http://site.local/uploads/".$uniq_name; 
 		      return $tmppath; 
 		    }
-		  }
-		  else
-		  {
+		  }else{
 		    redirect(base_url() . 'index.php/Welcome/not_img', 'refresh');
 		  }
+
 		}
-
-
-
 }

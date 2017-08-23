@@ -16,6 +16,15 @@ body {
 	color: #777;
 	font-weight: 300;
 }
+div.img{
+	position: relative;
+	width: 500px;
+    height:auto;
+    background-repeat: no-repeat; 
+    background-size: 100%;
+}
+
+
 h1 {
 	font-weight: lighter;
 	letter-spacing: 0.8;
