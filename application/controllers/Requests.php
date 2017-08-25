@@ -1,92 +1,133 @@
 <?php
 class Requests extends CI_Controller
 {
-	public function __construct()
-	{
-		parent::__construct();
-		$this->load->model('requests_model');
-	}
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('requests_model');
+        $this->load->helper('xml');
+    }
 
-	public function index()
-	{
-		$data['title'] = 'Заявки на ремонт';
-		if($this->session->userdata('isUserLoggedIn')) {
-			if($this->session->userdata('admin')) {
-				$data['request'] = $this->requests_model->get();
-			} else {
-				$data['request'] = $this->requests_model->getByCreator();
-			}
-		}
-		$this->load->view('templates/header', $data);
-		$this->load->view('requests/index', $data);
-		$this->load->view('templates/footer');
-	}
+    public function index()
+    {
+        $data['title'] = 'Заявки на ремонт';
+        if($this->session->userdata('isUserLoggedIn')) {
+            if($this->session->userdata('admin')) {
+                $data['request'] = $this->requests_model->get();
+                $xml = $this->createXML($data);
+        } else {
+                $data['request'] = $this->requests_model->getByCreator();
+            }
+        }
 
-	public function view($slug = null)
-	{
-		$data['requests_item'] = $this->requests_model->getBySlug($slug);
+        if(isset($_GET['requests'])) {
+            $id = $_GET['requests'];
+            if($id == 'last') {
+                $tmp = array_pop($data['request']);
+                $tmp['title'] = "<h2>" . $tmp['title'] . "</h2>";
+                array_push($data['request'], $tmp);
+            }
+        }
 
-		if (empty($data['requests_item'])) {
-			show_404();
-		}
+        $this->load->view('templates/header', $data);
+        $this->load->view('requests/index', $data);
+        $this->load->view('templates/footer');
+        
+        return $data;
+    }
 
-		$data['title'] = $data['requests_item']['title'];
+    public function view($slug = null)
+    {
+        $data['requests_item'] = $this->requests_model->getBySlug($slug);
 
-		$this->load->view('templates/header', $data);
-		$this->load->view('requests/view', $data);
-		$this->load->view('templates/footer');
-	}
+        if (empty($data['requests_item'])) {
+            show_404();
+        }
 
-	public function create()
-	{
-		$this->load->helper('form');
-		$this->load->library('form_validation');
+        $data['title'] = $data['requests_item']['title'];
 
-		$validImg = array('image/png', 'image/gif', 'image/jpeg');
-		$data['title'] = 'Создание заявки';
+        $this->load->view('templates/header', $data);
+        $this->load->view('requests/view', $data);
+        $this->load->view('templates/footer');
+    }
 
-		$this->form_validation->set_rules('title', 'Title', 'required');
-		$this->form_validation->set_rules('description', 'Description', 'required');
-		$this->form_validation->set_rules('phone', 'Phone', 'required');
+    public function create()
+    {
+        $this->load->helper('form');
+        $this->load->library('form_validation');
 
-		if (!in_array($this->getMime(), $validImg)) {
-			$this->form_validation->set_rules('pic', 'Photo', 'matches[pic]');
-		}else{
-			//$this->form_validation->set_rules('pic', 'Photo', 'required');
-		}
+        $validImg = array('image/png', 'image/gif', 'image/jpeg');
+        $data['title'] = 'Создание заявки';
 
-		if ($this->form_validation->run() === false) {
-			$this->load->view('templates/header', $data);
-			$this->load->view('requests/create');
-			$this->load->view('templates/footer');
-		} else {
-			$img_url = $this->getImgUrl();
-			$this->requests_model->setRequests($img_url);
-			redirect('requests');
-		}
-	}
+        $create_data['title'] = $this->input->post('title');;
+        $create_data['description'] = $this->input->post('description');
+        $create_data['phone'] = $this->input->post('phone');
+        $create_data['image_url'] = false;
 
-	protected function getMime()
-	{
-		if (!empty($_FILES['pic']['tmp_name'])) {
-			$info = getimagesize($_FILES['pic']['tmp_name']);
-			$mime = $info['mime'];
-			return $mime;
-		}
-	}
+        $this->form_validation->set_rules('title', 'Title', 'required');
+        $this->form_validation->set_rules('description', 'Description', 'required');
+        $this->form_validation->set_rules('phone', 'Phone', 'required');
 
-	protected function getImgUrl()
-	{
-		$img_name = pathinfo($_FILES['pic']['name'], PATHINFO_EXTENSION);
-		$type = explode(".",$img_name);
-		$type = $type[count($type)-1];
-		$uniq_name = uniqid(rand()).".".$type;
-		$tmppath = FCPATH."/uploads/".$uniq_name;
+        if (!in_array($this->getMime(), $validImg) && !empty($_FILES['pic']['tmp_name'])) {
+            $this->form_validation->set_rules('pic', 'Photo', 'matches[pic]');
+        }
 
-		if (is_uploaded_file($_FILES["pic"]["tmp_name"])) {
-			move_uploaded_file($_FILES['pic']['tmp_name'],$tmppath);
-			$tmppath = "http://site.local/uploads/".$uniq_name; 
-			return $tmppath; 
-		}
-	}
+        if ($this->form_validation->run() === false) {
+            $this->load->view('templates/header', $data);
+            $this->load->view('requests/create');
+            $this->load->view('templates/footer');
+        } else {
+            if (!empty($_FILES['pic']['tmp_name'])) {
+                $create_data['image_url'] = $img_url = $this->getImgUrl();
+            }
+
+            $this->requests_model->setRequests($create_data);
+            redirect('?requests=last');
+        }
+    }
+
+    protected function getMime()
+    {
+        if (!empty($_FILES['pic']['tmp_name'])) {
+            $info = getimagesize($_FILES['pic']['tmp_name']);
+            $mime = $info['mime'];
+            return $mime;
+        }
+    }
+
+    protected function getImgUrl()
+    {
+        $img_info = pathinfo($_FILES['pic']['name']);
+        $uniq_name = uniqid(rand()).".".$img_info['extension'];
+        $tmppath = FCPATH."uploads/".$uniq_name;
+
+        if (is_uploaded_file($_FILES["pic"]["tmp_name"])) {
+            move_uploaded_file($_FILES['pic']['tmp_name'],$tmppath);
+            $img_url = 'uploads/'.$uniq_name; 
+            return $img_url; 
+        }
+    }
+
+	protected function createXML($data)
+    {
+        $requestsXML = new SimpleXMLElement("<requests></requests>");
+        foreach ($data['request'] as $requestsItem){
+            $request = $requestsXML->addChild('request');
+            $request->addAttribute('id', $requestsItem['id']);
+
+            $title = $request->addChild('title', $requestsItem['title']);
+            $phone = $request->addChild('phone', $requestsItem['phone']);
+            $desc = $request->addChild('desc', $requestsItem['description']);
+            $img = $request->addChild('image', $requestsItem['image_url']);
+
+        }
+        return $requestsXML->asXML();
+    }
+
+    public function download()
+    {
+        $xml = $this->createXML($this->index());
+        force_download('requests.xml', $xml);
+        $this->load->view('requests/success');
+    }
 }

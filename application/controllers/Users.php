@@ -2,13 +2,15 @@
 class Users extends CI_Controller
 {
     
-    function __construct() {
+    function __construct()
+    {
         parent::__construct();
         $this->load->library('form_validation');
         $this->load->model('user');
     }
 
-    public function account(){
+    public function account()
+    {
         $data = array();
         if($this->session->userdata('isUserLoggedIn')){
             $data['user'] = $this->user->getRows(array('id'=>$this->session->userdata('userId')));
@@ -21,7 +23,8 @@ class Users extends CI_Controller
         }
     }
 
-    public function login(){
+    public function login()
+    {
         $data = array();
         if($this->session->userdata('success_msg')){
             $data['success_msg'] = $this->session->userdata('success_msg');
@@ -38,7 +41,7 @@ class Users extends CI_Controller
                 $con['returnType'] = 'single';
                 $con['conditions'] = array(
                     'email'=>$this->input->post('email'),
-                    'password' => md5($this->input->post('password')),
+                    'password' => md5($this->config->item('salt') . $this->input->post('password')),
                     'status' => '1'
                 );
                 $checkLogin = $this->user->getRows($con);
@@ -58,7 +61,8 @@ class Users extends CI_Controller
         $this->load->view('templates/footer');
     }
 
-    public function registration(){
+    public function registration()
+    {
         $data = array();
         $userData = array();
         if($this->input->post('regisSubmit')){
@@ -72,7 +76,7 @@ class Users extends CI_Controller
                 'name' => strip_tags($this->input->post('name')),
                 'surname' => strip_tags($this->input->post('surname')),
                 'email' => strip_tags($this->input->post('email')),
-                'password' => md5($this->input->post('password'))
+                'password' => md5($this->config->item('salt') . $this->input->post('password'))
             );
 
             if($this->form_validation->run() == true){
@@ -93,14 +97,16 @@ class Users extends CI_Controller
         
     }
 
-    public function logout(){
+    public function logout()
+    {
         $this->session->unset_userdata('isUserLoggedIn');
         $this->session->unset_userdata('userId');
         $this->session->sess_destroy();
         redirect('users/login/');
     }
 
-    public function email_check($str){
+    public function email_check($str)
+    {
         $con['returnType'] = 'count';
         $con['conditions'] = array('email'=>$str);
         $checkEmail = $this->user->getRows($con);

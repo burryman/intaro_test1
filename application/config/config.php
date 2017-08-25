@@ -25,6 +25,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 */
 $config['base_url'] = 'http://site.local/';
 
+$config['salt'] = '9%SSo]Se{.9!%.M7KRN]D$gEn*ju7tiKBsRWAO+~Kh!S$U^]!2?$/c;wK_F ESMQ';
+
 /*
 |--------------------------------------------------------------------------
 | Index File
@@ -521,3 +523,5 @@ $config['rewrite_short_tags'] = FALSE;
 | Array:		array('10.0.1.200', '192.168.5.0/24')
 */
 $config['proxy_ips'] = '';
+
+
