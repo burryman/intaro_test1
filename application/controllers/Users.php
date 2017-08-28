@@ -1,7 +1,6 @@
 <?php
 class Users extends CI_Controller
 {
-    
     function __construct()
     {
         parent::__construct();
@@ -12,13 +11,13 @@ class Users extends CI_Controller
     public function account()
     {
         $data = array();
-        if($this->session->userdata('isUserLoggedIn')){
+        if ($this->session->userdata('isUserLoggedIn')) {
             $data['user'] = $this->user->getRows(array('id'=>$this->session->userdata('userId')));
 
             $this->load->view('templates/header', $data);
             $this->load->view('users/account', $data);
             $this->load->view('templates/footer');
-        }else{
+        } else {
             redirect('users/login');
         }
     }
@@ -26,15 +25,15 @@ class Users extends CI_Controller
     public function login()
     {
         $data = array();
-        if($this->session->userdata('success_msg')){
+        if ($this->session->userdata('success_msg')) {
             $data['success_msg'] = $this->session->userdata('success_msg');
             $this->session->unset_userdata('success_msg');
         }
-        if($this->session->userdata('error_msg')){
+        if ($this->session->userdata('error_msg')) {
             $data['error_msg'] = $this->session->userdata('error_msg');
             $this->session->unset_userdata('error_msg');
         }
-        if($this->input->post('loginSubmit')){
+        if ($this->input->post('loginSubmit')) {
             $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
             $this->form_validation->set_rules('password', 'password', 'required');
             if ($this->form_validation->run() == true) {
@@ -45,12 +44,12 @@ class Users extends CI_Controller
                     'status' => '1'
                 );
                 $checkLogin = $this->user->getRows($con);
-                if($checkLogin){
+                if ($checkLogin) {
                     $this->session->set_userdata('isUserLoggedIn',TRUE);
                     $this->session->set_userdata('userId',$checkLogin['id']);
                     $this->session->set_userdata('admin',$checkLogin['admin']);
                     redirect(base_url() . 'requests');
-                }else{
+                } else {
                     $data['error_msg'] = 'Неверный Email или пароль, повторите еще раз.';
                 }
             }
@@ -65,7 +64,7 @@ class Users extends CI_Controller
     {
         $data = array();
         $userData = array();
-        if($this->input->post('regisSubmit')){
+        if ($this->input->post('regisSubmit')) {
             $this->form_validation->set_rules('name', 'Name', 'required');
             $this->form_validation->set_rules('surname', 'SurName', 'required');
             $this->form_validation->set_rules('email', 'Email', 'required|valid_email|callback_email_check');
@@ -79,12 +78,12 @@ class Users extends CI_Controller
                 'password' => md5($this->config->item('salt') . $this->input->post('password'))
             );
 
-            if($this->form_validation->run() == true){
+            if ($this->form_validation->run() == true) {
                 $insert = $this->user->insert($userData);
-                if($insert){
+                if ($insert){
                     $this->session->set_userdata('success_msg', 'Регистрация прошла успешно. Войдите в свой аккаунт');
                     redirect('users/login');
-                }else{
+                } else {
                     $data['error_msg'] = 'Что-то пошло не так, повторите еще раз';
                 }
             }
@@ -110,7 +109,7 @@ class Users extends CI_Controller
         $con['returnType'] = 'count';
         $con['conditions'] = array('email'=>$str);
         $checkEmail = $this->user->getRows($con);
-        if($checkEmail > 0){
+        if ($checkEmail > 0) {
             $this->form_validation->set_message('email_check', 'Данный Email уже зарегестрирован');
             return FALSE;
         } else {

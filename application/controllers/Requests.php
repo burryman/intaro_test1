@@ -4,23 +4,15 @@ class Requests extends CI_Controller
     public function __construct()
     {
         parent::__construct();
-        $this->load->model('requests_model');
+        $this->load->model('request');
         $this->load->helper('xml');
     }
 
     public function index()
     {
-        $data['title'] = 'Заявки на ремонт';
-        if($this->session->userdata('isUserLoggedIn')) {
-            if($this->session->userdata('admin')) {
-                $data['request'] = $this->requests_model->get();
-                $xml = $this->createXML($data);
-        } else {
-                $data['request'] = $this->requests_model->getByCreator();
-            }
-        }
+        $data = $this->loadIndex();
 
-        if(isset($_GET['requests'])) {
+        if (isset($_GET['requests'])) {
             $id = $_GET['requests'];
             if($id == 'last') {
                 $tmp = array_pop($data['request']);
@@ -28,17 +20,29 @@ class Requests extends CI_Controller
                 array_push($data['request'], $tmp);
             }
         }
-
+        
         $this->load->view('templates/header', $data);
         $this->load->view('requests/index', $data);
         $this->load->view('templates/footer');
-        
+    }
+
+    protected function loadIndex()
+    {
+        $data['title'] = 'Заявки на ремонт';
+        if ($this->session->userdata('isUserLoggedIn')) {
+            if ($this->session->userdata('admin')) {
+                $data['request'] = $this->request->get();
+        } else {
+                $data['request'] = $this->request->getByCreator();
+            }
+        }
+
         return $data;
     }
 
     public function view($slug = null)
     {
-        $data['requests_item'] = $this->requests_model->getBySlug($slug);
+        $data['requests_item'] = $this->request->getBySlug($slug);
 
         if (empty($data['requests_item'])) {
             show_404();
@@ -81,7 +85,7 @@ class Requests extends CI_Controller
                 $create_data['image_url'] = $img_url = $this->getImgUrl();
             }
 
-            $this->requests_model->setRequests($create_data);
+            $this->request->setRequests($create_data);
             redirect('?requests=last');
         }
     }
@@ -126,8 +130,7 @@ class Requests extends CI_Controller
 
     public function download()
     {
-        $xml = $this->createXML($this->index());
+        $xml = $this->createXML($this->loadIndex());
         force_download('requests.xml', $xml);
-        $this->load->view('requests/success');
     }
 }
