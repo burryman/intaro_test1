@@ -19,9 +19,8 @@ class Request extends CI_Model {
         return $query->result_array();
     }
 
-    public function getByCreator()
+    public function getByCreator($userId)
     {
-        $userId = $this->session->userdata('userId');
         $query = $this->db->get_where('request', array('creator_id' => $userId));
         return $query->result_array();
     }

@@ -30,10 +30,11 @@ class Requests extends CI_Controller
     {
         $data['title'] = 'Заявки на ремонт';
         if ($this->session->userdata('isUserLoggedIn')) {
+            $currentUser = $this->session->userdata('userId');
             if ($this->session->userdata('admin')) {
                 $data['request'] = $this->request->get();
         } else {
-                $data['request'] = $this->request->getByCreator();
+                $data['request'] = $this->request->getByCreator($currentUser);
             }
         }
 
